@@ -10,3 +10,6 @@ LEGO Powered Up Remote app for M5Stack
 - All Bluetooth LE Hubs (BOOST, Powered Up, and CONTROL+)
 - All Motors and LED Light
 - Duplo Train Base
+
+## Demo
+- https://www.youtube.com/watch?v=vI7d7CXUY0E

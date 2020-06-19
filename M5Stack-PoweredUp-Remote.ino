@@ -6,7 +6,6 @@ static BLEUUID characteristicUUID("00001624-1212-EFDE-1623-785FEABCD123");
 
 static BLEAdvertisedDevice* connectingDevice = nullptr;
 static BLERemoteCharacteristic* characteristic = nullptr;
-static BLEClient* client = nullptr;
 
 static int8_t power = 0;
 
@@ -67,7 +66,7 @@ static void stopScan() {
 }
 
 static bool connectToServer() {
-  client = BLEDevice::createClient();
+  BLEClient* client = BLEDevice::createClient();
   client->setClientCallbacks(new MyClientCallback());
   client->connect(connectingDevice);
 
@@ -100,6 +99,13 @@ static void drawCurrentPower() {
   M5.Lcd.drawCentreString(buf, 160, 120, 4);
 }
 
+static void writeValue(uint8_t* data, size_t length) {
+  characteristic->writeValue(data, length);
+
+  Serial.print("-> ");
+  logData(data, length);
+}
+
 static void sendMotorPowerCommand(uint8_t port, int8_t power) {
   uint8_t data[8] = {0};
   data[0] = 0x08;
@@ -111,10 +117,13 @@ static void sendMotorPowerCommand(uint8_t port, int8_t power) {
   data[6] = 0x00;
   data[7] = power;
 
-  characteristic->writeValue(data, sizeof(data));
+  writeValue(data, sizeof(data));
+}
 
-  Serial.print("-> ");
-  logData(data, sizeof(data));
+static void sendSwitchOffCommand() {
+  uint8_t data[] = {0x04, 0x00, 0x02, 0x01};
+
+  writeValue(data, sizeof(data));
 }
 
 static void setMotorPower(int8_t power) {
@@ -167,7 +176,7 @@ void loop() {
           setMotorPower(power);
         }
       } else if (M5.BtnB.wasReleasefor(1000)) {
-        client->disconnect();
+        sendSwitchOffCommand();
       }
     }
   }

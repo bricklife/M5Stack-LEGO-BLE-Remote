@@ -34,6 +34,13 @@ static void notifyCallback(BLERemoteCharacteristic* characteristic, uint8_t* dat
   logData("<- ", data, length);
 }
 
+static void scanCompleteCallback(BLEScanResults results) {
+  Serial.println("scanCompleteCallback");
+  M5.Lcd.setCursor(0, 120);
+  M5.Lcd.println("Device not found..");
+  M5.Lcd.println("Please reboot to scan.");
+}
+
 class MyClientCallback : public BLEClientCallbacks {
 
     void onConnect(BLEClient* client) {
@@ -64,8 +71,9 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 static void startScan() {
   BLEScan* scan = BLEDevice::getScan();
+  scan->clearResults();
   scan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
-  scan->start(10);
+  scan->start(10, scanCompleteCallback);
 }
 
 static void stopScan() {
@@ -177,8 +185,9 @@ void loop() {
         power += 10;
         setPowerToAllMotors(power);
       }
-    } else if (M5.BtnB.wasReleasefor(1000)) {
+    } else if (M5.BtnB.wasReleasefor(3000)) {
       sendSwitchOffCommand();
+      startScan();
     }
   }
 }

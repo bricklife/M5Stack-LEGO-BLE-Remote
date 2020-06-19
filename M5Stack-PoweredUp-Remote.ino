@@ -57,7 +57,6 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 static void startScan() {
   BLEScan* scan = BLEDevice::getScan();
   scan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
-  scan->setActiveScan(true);
   scan->start(10);
 }
 

@@ -1,5 +1,5 @@
-# M5Stack-PoweredUp-Remote
-LEGO Powered Up Remote app for M5Stack
+# M5Stack-LEGO-BLE-Remote
+LEGO BLE Remote app for M5Stack
 
 ## Requirements
 - Windows, macOS, or Linux

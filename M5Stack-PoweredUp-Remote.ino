@@ -8,6 +8,7 @@ static boolean connected = false;
 static BLEAdvertisedDevice* connectingDevice = nullptr;
 static BLERemoteCharacteristic* characteristic = nullptr;
 
+static uint8_t deviceType = 0;
 static int8_t power = 0;
 
 static void logData(char* prefix, uint8_t* data, size_t length) {
@@ -50,6 +51,7 @@ class MyClientCallback : public BLEClientCallbacks {
     void onDisconnect(BLEClient* client) {
       Serial.println("onDisconnect");
       connected = false;
+      deviceType = 0;
       clearUI();
     }
 };
@@ -61,7 +63,12 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       Serial.println(device.toString().c_str());
 
       if (device.haveServiceUUID() && device.isAdvertisingService(serviceUUID) && device.haveManufacturerData()) {
-        Serial.println("Found a LEGO BLE device!!");
+        std::string manufacturerData = device.getManufacturerData();
+        deviceType = manufacturerData[3];
+
+        Serial.printf("Found a LEGO BLE device: %02x", deviceType);
+        Serial.println("");
+
         BLEDevice::getScan()->stop();
 
         connectingDevice = new BLEAdvertisedDevice(device);
@@ -133,8 +140,22 @@ static void sendMotorPowerCommand(uint8_t port, int8_t power) {
   writeValue(data, sizeof(data));
 }
 
+static int numberOfPorts(uint8_t deviceType) {
+  switch (deviceType) {
+    case 0x40:
+    case 0x80:
+      return 4;
+    case 0x41:
+      return 2;
+    case 0x20:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 static void setPowerToAllMotors(int8_t power) {
-  for (uint8_t port = 0; port < 4; port++) {
+  for (uint8_t port = 0; port < numberOfPorts(deviceType); port++) {
     sendMotorPowerCommand(port, power);
   }
   drawPower(power);

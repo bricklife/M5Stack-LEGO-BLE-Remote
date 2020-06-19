@@ -156,7 +156,8 @@ void loop() {
   if (connectingDevice != nullptr) {
     if (characteristic == nullptr) {
       if (connectToServer()) {
-        setMotorPower(0);
+        power = 0;
+        drawCurrentPower();
       } else {
         Serial.println("Failed to make a connection...");
         connectingDevice = nullptr;

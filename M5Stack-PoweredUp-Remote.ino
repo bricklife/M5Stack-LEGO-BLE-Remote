@@ -20,7 +20,17 @@ static void logData(char* prefix, uint8_t* data, size_t length) {
 }
 
 static void clearUI() {
-  M5.Lcd.fillRect(0, 120, 320, 120, TFT_BLACK);
+  M5.Lcd.fillRect(0, 120, 320, 80, TFT_BLACK);
+}
+
+static void drawMainUI() {
+  M5.Lcd.setTextFont(2);
+  M5.Lcd.setTextSize(2);
+  M5.Lcd.println("Powered Up Remote");
+
+  M5.Lcd.drawCentreString("-", 65, 200, 2);
+  M5.Lcd.drawCentreString("0", 160, 200, 2);
+  M5.Lcd.drawCentreString("+", 255, 200, 2);
 }
 
 static void drawPower(int8_t power) {
@@ -31,15 +41,17 @@ static void drawPower(int8_t power) {
   M5.Lcd.drawCentreString(buf, 160, 120, 4);
 }
 
-static void notifyCallback(BLERemoteCharacteristic* characteristic, uint8_t* data, size_t length, bool isNotify) {
-  logData("<- ", data, length);
-}
-
 static void scanCompleteCallback(BLEScanResults results) {
   Serial.println("scanCompleteCallback");
   M5.Lcd.setCursor(0, 120);
-  M5.Lcd.println("Device not found..");
+  M5.Lcd.setTextFont(2);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.println("Device not found...");
   M5.Lcd.println("Please reboot to scan.");
+}
+
+static void notifyCallback(BLERemoteCharacteristic* characteristic, uint8_t* data, size_t length, bool isNotify) {
+  logData("<- ", data, length);
 }
 
 class MyClientCallback : public BLEClientCallbacks {
@@ -81,6 +93,7 @@ static void startScan() {
   scan->clearResults();
   scan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
   scan->start(10, scanCompleteCallback);
+  Serial.println("Started scanning...");
 }
 
 static void stopScan() {
@@ -169,10 +182,8 @@ void setup() {
   M5.Power.begin();
 
   M5.Lcd.fillScreen(TFT_BLACK);
-  M5.Lcd.setTextFont(2);
-  M5.Lcd.setTextSize(2);
   M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
-  M5.Lcd.println("Powered Up Remote");
+  drawMainUI();
 
   BLEDevice::init("");
   startScan();

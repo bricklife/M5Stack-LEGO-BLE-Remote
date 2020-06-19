@@ -4,6 +4,7 @@
 static BLEUUID serviceUUID("00001623-1212-EFDE-1623-785FEABCD123");
 static BLEUUID characteristicUUID("00001624-1212-EFDE-1623-785FEABCD123");
 
+static boolean connected = false;
 static BLEAdvertisedDevice* connectingDevice = nullptr;
 static BLERemoteCharacteristic* characteristic = nullptr;
 
@@ -23,7 +24,7 @@ static void clearUI() {
 
 static void drawPower(int8_t power) {
   clearUI();
-  
+
   char buf[10];
   sprintf(buf, "%d", power);
   M5.Lcd.drawCentreString(buf, 160, 120, 4);
@@ -41,8 +42,7 @@ class MyClientCallback : public BLEClientCallbacks {
 
     void onDisconnect(BLEClient* client) {
       Serial.println("onDisconnect");
-      connectingDevice = nullptr;
-      characteristic = nullptr;
+      connected = false;
       clearUI();
     }
 };
@@ -95,6 +95,7 @@ static bool connect() {
     characteristic->registerForNotify(notifyCallback);
   }
 
+  connected = true;
   return true;
 }
 
@@ -152,31 +153,32 @@ void loop() {
   M5.update();
 
   if (connectingDevice != nullptr) {
-    if (characteristic == nullptr) {
-      if (connect()) {
-        power = 0;
-        drawPower(power);
-      } else {
-        Serial.println("Failed to make a connection...");
-        connectingDevice = nullptr;
-      }
+    if (connect()) {
+      Serial.println("Connected");
+      power = 0;
+      drawPower(power);
     } else {
-      if (M5.BtnA.wasReleased()) {
-        if (power > -100) {
-          power -= 10;
-          setPowerToAllMotors(power);
-        }
-      } else if (M5.BtnB.wasReleased()) {
-        power = 0;
+      Serial.println("Failed to make a connection...");
+    }
+    connectingDevice = nullptr;
+  }
+
+  if (connected) {
+    if (M5.BtnA.wasReleased()) {
+      if (power > -100) {
+        power -= 10;
         setPowerToAllMotors(power);
-      } else if (M5.BtnC.wasReleased()) {
-        if (power < 100) {
-          power += 10;
-          setPowerToAllMotors(power);
-        }
-      } else if (M5.BtnB.wasReleasefor(1000)) {
-        sendSwitchOffCommand();
       }
+    } else if (M5.BtnB.wasReleased()) {
+      power = 0;
+      setPowerToAllMotors(power);
+    } else if (M5.BtnC.wasReleased()) {
+      if (power < 100) {
+        power += 10;
+        setPowerToAllMotors(power);
+      }
+    } else if (M5.BtnB.wasReleasefor(1000)) {
+      sendSwitchOffCommand();
     }
   }
 }

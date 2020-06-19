@@ -9,7 +9,8 @@ static BLERemoteCharacteristic* characteristic = nullptr;
 
 static int8_t power = 0;
 
-static void logData(uint8_t* data, size_t length) {
+static void logData(char* prefix, uint8_t* data, size_t length) {
+  Serial.print(prefix);
   for (uint8_t i = 0; i < length; i++) {
     Serial.printf("%02x ", data[i]);
   }
@@ -20,9 +21,16 @@ static void clearUI() {
   M5.Lcd.fillRect(0, 120, 320, 120, TFT_BLACK);
 }
 
+static void drawPower(int8_t power) {
+  clearUI();
+  
+  char buf[10];
+  sprintf(buf, "%d", power);
+  M5.Lcd.drawCentreString(buf, 160, 120, 4);
+}
+
 static void notifyCallback(BLERemoteCharacteristic* characteristic, uint8_t* data, size_t length, bool isNotify) {
-  Serial.print("<- ");
-  logData(data, length);
+  logData("<- ", data, length);
 }
 
 class MyClientCallback : public BLEClientCallbacks {
@@ -64,7 +72,7 @@ static void stopScan() {
   BLEDevice::getScan()->stop();
 }
 
-static bool connectToServer() {
+static bool connect() {
   BLEClient* client = BLEDevice::createClient();
   client->setClientCallbacks(new MyClientCallback());
   client->connect(connectingDevice);
@@ -90,19 +98,16 @@ static bool connectToServer() {
   return true;
 }
 
-static void drawCurrentPower() {
-  clearUI();
-  
-  char buf[10];
-  sprintf(buf, "%d", power);
-  M5.Lcd.drawCentreString(buf, 160, 120, 4);
-}
-
 static void writeValue(uint8_t* data, size_t length) {
   characteristic->writeValue(data, length);
 
-  Serial.print("-> ");
-  logData(data, length);
+  logData("-> ", data, length);
+}
+
+static void sendSwitchOffCommand() {
+  uint8_t data[] = {0x04, 0x00, 0x02, 0x01};
+
+  writeValue(data, sizeof(data));
 }
 
 static void sendMotorPowerCommand(uint8_t port, int8_t power) {
@@ -119,17 +124,11 @@ static void sendMotorPowerCommand(uint8_t port, int8_t power) {
   writeValue(data, sizeof(data));
 }
 
-static void sendSwitchOffCommand() {
-  uint8_t data[] = {0x04, 0x00, 0x02, 0x01};
-
-  writeValue(data, sizeof(data));
-}
-
-static void setMotorPower(int8_t power) {
+static void setPowerToAllMotors(int8_t power) {
   for (uint8_t port = 0; port < 4; port++) {
     sendMotorPowerCommand(port, power);
   }
-  drawCurrentPower();
+  drawPower(power);
 }
 
 void setup() {
@@ -154,9 +153,9 @@ void loop() {
 
   if (connectingDevice != nullptr) {
     if (characteristic == nullptr) {
-      if (connectToServer()) {
+      if (connect()) {
         power = 0;
-        drawCurrentPower();
+        drawPower(power);
       } else {
         Serial.println("Failed to make a connection...");
         connectingDevice = nullptr;
@@ -165,15 +164,15 @@ void loop() {
       if (M5.BtnA.wasReleased()) {
         if (power > -100) {
           power -= 10;
-          setMotorPower(power);
+          setPowerToAllMotors(power);
         }
       } else if (M5.BtnB.wasReleased()) {
         power = 0;
-        setMotorPower(power);
+        setPowerToAllMotors(power);
       } else if (M5.BtnC.wasReleased()) {
         if (power < 100) {
           power += 10;
-          setMotorPower(power);
+          setPowerToAllMotors(power);
         }
       } else if (M5.BtnB.wasReleasefor(1000)) {
         sendSwitchOffCommand();

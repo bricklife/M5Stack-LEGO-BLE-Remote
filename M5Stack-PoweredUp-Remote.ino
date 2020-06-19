@@ -45,7 +45,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       Serial.print("Found device: ");
       Serial.println(device.toString().c_str());
 
-      if (device.haveServiceUUID() && device.isAdvertisingService(serviceUUID)) {
+      if (device.haveServiceUUID() && device.isAdvertisingService(serviceUUID) && device.haveManufacturerData()) {
         Serial.println("Found a LEGO BLE device!!");
         BLEDevice::getScan()->stop();
 

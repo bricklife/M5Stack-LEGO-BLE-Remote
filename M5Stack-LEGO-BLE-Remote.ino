@@ -26,7 +26,7 @@ static void clearUI() {
 static void drawMainUI() {
   M5.Lcd.setTextFont(2);
   M5.Lcd.setTextSize(2);
-  M5.Lcd.println("Powered Up Remote");
+  M5.Lcd.println("LEGO BLE Remote");
 
   M5.Lcd.drawCentreString("-", 65, 200, 2);
   M5.Lcd.drawCentreString("0", 160, 200, 2);
